@@ -30,6 +30,15 @@ interface IERC20With4RMechanism{
     event Approval(address indexed owner, address indexed spender, uint256 value);
     
 }
+
+error NotRegister(address Address);
+error InvalidPlaceID(string PlaceID);
+error InvalidTicketID(string PlaceID, string TicketID);
+error TicketIsUsed(string PlaceID, string TicketID);
+error InvalidPostID(bytes32 PostID);
+error TicketIsVerified(string PlaceID, string TicketID);
+error TicketNotVerified(string PlaceID, string TicketID);
+
 contract Tourism {
 
   IERC20With4RMechanism public erc20Token;
@@ -48,12 +57,12 @@ contract Tourism {
     bytes32 postID;
     string placeId;
     string placeName;
+    string placeAddress;
     uint256 createTime;
     uint rate;
     string review;
     string title;
     uint upvoteNum;
-    bool ticketVerify;
   }
 
   struct Tourist {
@@ -74,10 +83,12 @@ contract Tourism {
   mapping (address => bytes32 []) public listReward;
   
   mapping (string  => string ) public destinationIdentify; // placeID => destination
+  mapping (string  => string ) public destinationAddress; // placeID => destination address
   mapping (string  => Review[]) public destinationReviews; // destinationId => review[]
   mapping (string  => uint8[]) public destinationRates; // all rates of a destination
+
   mapping (bytes32 => Review) public reviewByID;
-  
+  mapping (bytes32 => bool) public reviewVerify;
   // Ticket Check
   mapping (string  => mapping (string => bool)) private isActive; //check for a ticket in place is active yet
   mapping (string  => mapping (string => bool)) private isUsed; //check for a ticket in place is used yet
@@ -108,24 +119,51 @@ contract Tourism {
     emit Register(_firstName, _lastName, _phoneNumber);
   }
 
-  function addDestination(string memory _id, string memory destinationName ) public onlyAdmin {
+  function addDestination(string memory _id, string memory destinationName, string memory destinationAddr) public onlyAdmin {
     destinationIdentify[_id] = destinationName;
+    destinationAddress[_id] = destinationAddr;
   }
 
   event CheckIn(string ticketId, string placeID, Tourist Tourist);
   function checkIn(string memory ticketId, string memory placeID) public {
-    require(isRegister[msg.sender] == true, "Must be register");
-    require(bytes(destinationIdentify[placeID]).length > 0, "placeID not correct");
-    require(isActive[placeID][ticketId] == true, "Ticket ID is not valid");
-    require(isUsed[placeID][ticketId] == false, "Ticket ID has used");
+    if (isRegister[msg.sender] == false) {
+      revert NotRegister({
+        Address: msg.sender
+      });
+    }
+    if (bytes(destinationIdentify[placeID]).length < 0) {
+      revert InvalidPlaceID({
+        PlaceID: placeID
+      });
+    }
+    if(isActive[placeID][ticketId] == false) {
+      revert InvalidTicketID({
+        PlaceID: placeID,
+        TicketID: ticketId
+      });
+    }
+    if(isUsed[placeID][ticketId] == true) {
+      revert TicketIsUsed({
+        PlaceID: placeID,
+        TicketID: ticketId
+      });
+    }
     isUsed[placeID][ticketId] = true;
     emit CheckIn(ticketId, placeID, touristIdentify[msg.sender]);
   }
 
   event PostReview(Tourist tourist,bytes32 postID, string PlaceName, string review, uint8 rate, string title);
   function reviews( string memory placeID ,string memory review, uint8 rate, string memory title) public {
-    require(isRegister[msg.sender] == true, "Must be register");
-    require(bytes(destinationIdentify[placeID]).length > 0, "placeID not correct");
+    if (isRegister[msg.sender] == false) {
+      revert NotRegister({
+        Address: msg.sender
+      });
+    }
+    if (bytes(destinationIdentify[placeID]).length < 0) {
+      revert InvalidPlaceID({
+        PlaceID: placeID
+      });
+    }
     require(rate >= 0 && rate <= 50, "Unvalid number rate");
     Review memory newReview;
     newReview.postID = generateIdForReviewPost(placeID, block.timestamp, review, rate, title);
@@ -136,6 +174,7 @@ contract Tourism {
     newReview.title = title;
     newReview.createTime = block.timestamp;
     newReview.placeName = destinationIdentify[placeID];
+    newReview.placeAddress = destinationAddress[placeID];
     newReview.upvoteNum = 0;
     reviewByID[newReview.postID] = newReview;
 
@@ -143,6 +182,7 @@ contract Tourism {
     destinationReviews[placeID].push(newReview);
     destinationRates[placeID].push(rate);
     emit PostReview(touristIdentify[msg.sender], newReview.postID, destinationIdentify[placeID], review, rate, title);
+
   }
 
   function getAllReviewsOfTourist(address touristAddress) public view returns (Review [] memory) {
@@ -177,7 +217,11 @@ contract Tourism {
 
   function upvote(bytes32 postID) public {
     require(bytes32(reviewByID[postID].postID) != 0x0000000000000000000000000000000000000000000000000000000000000000, "Invalid Post ID");
-    require(isRegister[msg.sender] == true, "Must be register");
+    if (isRegister[msg.sender] == false) {
+      revert NotRegister({
+        Address: msg.sender
+      });
+    }
     require(isVoted[msg.sender][postID] == false, "This account is voted for this post");
     Tourist storage curator = touristIdentify[msg.sender];
     require(curator.VP >= 2 && curator.VP <= 100, "Voting Power not enough for upvote");
@@ -205,7 +249,7 @@ contract Tourism {
   function calculateTotalReward(bytes32 postID) public view returns (uint) {
     require(bytes32(reviewByID[postID].postID) != 0x0000000000000000000000000000000000000000000000000000000000000000, "Invalid Post ID");
     // require(block.timestamp - reviewByID[postID].createTime > 7 days, "Wait for 7days");
-    require(reviewByID[postID].ticketVerify == true, "Cannot reward because of unverifying ticket");
+    require(reviewVerify[postID] == true, "Cannot reward because of unverifying ticket");
     // lấy mảng vote ra
     Vote[] memory upvotes = getVoteOfReview(postID);
     uint voteNum = reviewByID[postID].upvoteNum;
@@ -227,8 +271,14 @@ contract Tourism {
   mapping (address => mapping (bytes32 => uint)) public touristRewardOnPostID;
   event DivideRewardBy4R(bytes32 indexed postID, uint256 indexed authorReward, uint256 indexed curatorsReward, Vote[] upvotes);
   function divideRewardBy4R(bytes32 postID) public {
-    require(bytes32(reviewByID[postID].postID) != 0x0000000000000000000000000000000000000000000000000000000000000000, "Invalid Post ID");
-    require(reviewByID[postID].ticketVerify == true, "Cannot reward because of unverifying ticket");
+    if (bytes32(reviewByID[postID].postID) == 0x0000000000000000000000000000000000000000000000000000000000000000) {
+      revert InvalidPostID({
+        PostID: postID
+      });
+    }
+    if (reviewVerify[postID] == false) {
+      revert ("Not Verified");
+    }
     
     uint256 totalReward;
     address authorAddress = reviewByID[postID].author;
@@ -243,6 +293,7 @@ contract Tourism {
     totalReward = totalReward * (1 ether);
     uint256 authorReward = totalReward * 75 / 100;
     touristRewardOnPostID[authorAddress][postID] = authorReward;
+    listReward[authorAddress].push(postID);
     uint curatorsReward = totalReward * 25 / 100;
   
     for (uint i = 0; i < upvotes.length; i++) {
@@ -271,12 +322,28 @@ contract Tourism {
 
   function verifyTicket(bytes32 postID, string memory ticketID) public {
     Review storage review = reviewByID[postID];
-    require(bytes32(reviewByID[postID].postID) != 0x0000000000000000000000000000000000000000000000000000000000000000, "Invalid Post ID");
-    require(isActive[review.placeId][ticketID] == true, "Invalid Ticket ID");
-    require(isUsed[review.placeId][ticketID] == true, "Ticket is not used");
-    require(isVerify[review.placeId][ticketID] == false, "Ticket has been verify");
-    review.ticketVerify = true;
+    if (bytes32(reviewByID[postID].postID) == 0x0000000000000000000000000000000000000000000000000000000000000000) {
+      revert InvalidPostID({
+        PostID: postID
+      });
+    }
+    if(isUsed[review.placeId][ticketID] == false) {
+      revert TicketIsUsed({
+        PlaceID: review.placeId,
+        TicketID: ticketID
+      });
+    }
+    if(isVerify[review.placeId][ticketID] == true) {
+      revert TicketIsVerified({
+        PlaceID: review.placeId,
+        TicketID: ticketID
+      });
+    }
+    if(reviewVerify[postID] == true) {
+      revert("This Post Has Verified");
+    }
     isVerify[review.placeId][ticketID] = true;
+    reviewVerify[postID] = true;
   }
 
   function sqrt(uint256 x) pure internal returns (uint128) {

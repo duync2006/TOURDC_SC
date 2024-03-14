@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 const fs = require("fs");
-// const { ethers } = require("hardhat");
 var path = require('path');
+
 async function main() {
 
   const [owner, addr1, addr2] = await ethers.getSigners();
@@ -22,13 +22,59 @@ async function main() {
   const contractTourDCWith4RMechanism = await contractTourism.deploy(await tourDCToken.getAddress())
   console.log("contract Tourism deploy at address: ", await contractTourDCWith4RMechanism.getAddress())
   
-  // const firstName = "John";
-  // const lastName = "Doe";
-  // const phoneNumber = "123456789";
+  // Register User
 
-  // const tran_register = await contractTourDCWith4RMechanism.register(firstName, lastName, phoneNumber);
-  // await tran_register.wait();
-  // console.log("Transaction mined. Registration successful!: ",tran_register);
+  const tran_register_1 = await contractTourDCWith4RMechanism.connect(owner).register("Admin", "Super", "999999999");
+  await tran_register_1.wait();
+  
+  const tran_register_2 = await contractTourDCWith4RMechanism.connect(addr1).register("Duy", "Nguyen", "0918844446");
+  await tran_register_2.wait();
+
+  const tran_register_3 = await contractTourDCWith4RMechanism.connect(addr2).register("Phong", "Tran", "01923810923");
+  await tran_register_3.wait();
+
+  //  Add Place
+  const add_des_1 = await contractTourDCWith4RMechanism.connect(owner).addDestination("65d6ec325ecf27cb3d803d87", "LightHouse", "Nha Trang, VietNam")
+  const add_des_2 = await contractTourDCWith4RMechanism.connect(owner).addDestination("65d6ec325ecf27cb3d803d88", "Da Lat", "Lam Dong, VietNam")
+  const add_des_3 = await contractTourDCWith4RMechanism.connect(owner).addDestination("65d6ec325ecf27cb3d803d89", "Secret Cave", "Qui Nhon,VietNam")
+  const add_des_4 = await contractTourDCWith4RMechanism.connect(owner).addDestination("65d6ec325ecf27cb3d803d90", "Da Nang", "Da Nang, VietNam")
+
+  // Add Ticket 
+  await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65d6ec325ecf27cb3d803d87", "1")
+  await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65d6ec325ecf27cb3d803d87", "2")
+  await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65d6ec325ecf27cb3d803d87", "3")
+  await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65d6ec325ecf27cb3d803d87", "4")
+
+  // Check In
+  await contractTourDCWith4RMechanism.connect(owner).checkIn("1", "65d6ec325ecf27cb3d803d87")
+  await contractTourDCWith4RMechanism.connect(owner).checkIn("2", "65d6ec325ecf27cb3d803d87")
+  await contractTourDCWith4RMechanism.connect(owner).checkIn("3", "65d6ec325ecf27cb3d803d87")
+
+
+  // // Post Review
+  const reviewPost1 = await contractTourDCWith4RMechanism.connect(owner).reviews("65d6ec325ecf27cb3d803d87", "Good Place", 40, "Very excited Place");
+  await contractTourDCWith4RMechanism.connect(addr1).reviews("65d6ec325ecf27cb3d803d87", "Excellent Place", 45, "Perfectly!!!");
+  await contractTourDCWith4RMechanism.connect(addr2).reviews("65d6ec325ecf27cb3d803d87", "Dream Place", 50, "Ten Mark No But");
+
+  // console.log(reviewPost1);
+  // Verify Ticket
+  // get post ID
+
+  const receipt1 = await reviewPost1.wait();
+  const postID = await receipt1.logs[0].args[1];
+  console.log("PostID: ",postID);
+
+  await contractTourDCWith4RMechanism.connect(owner).verifyTicket(postID, "1");
+  console.log(await contractTourDCWith4RMechanism.connect(owner).reviewVerify(postID))
+
+  await contractTourDCWith4RMechanism.connect(addr1).upvote(postID); 
+  await contractTourDCWith4RMechanism.connect(addr2).upvote(postID); 
+
+  await contractTourDCWith4RMechanism.connect(owner).divideRewardBy4R(postID);
+  
+  // await contractTourDCWith4RMechanism.connect(addr1).upvote(postID); 
+
+
   await saveFrontendFiles(await contractTourDCWith4RMechanism.getAddress(), "Tourism")
   await saveFrontendFiles(await tourDCToken.getAddress(), "ERC20With4RMechanism")
 }
@@ -52,14 +98,6 @@ async function saveFrontendFiles(address, name) {
     console.log("hello")
     fs.mkdirSync(contractsDir);
   }
-  // console.log("hello2")
-  // if (!fs.existsSync(contractsDirTokenAddress)) {
-  //   fs.mkdirSync(contractsDirTokenAddress);
-  // }
-
-  // if (!fs.existsSync(contractsDirABI)) {
-  //   fs.mkdirSync(contractsDirABI);
-  // }
 
   fs.writeFileSync(
     path.join(contractsDir, `${name}-address.json`),
