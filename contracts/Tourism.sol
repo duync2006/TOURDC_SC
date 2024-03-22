@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
    */
 
 
-contract ERC20With4RMechanism is  ERC20("DCToken", "DC"){
+contract ERC20With4RMechanism is ERC20("DCToken", "DC"){
     constructor(uint256 initialSupply) {
       _mint(msg.sender, initialSupply);
     }
@@ -124,7 +124,7 @@ contract Tourism {
     destinationAddress[_id] = destinationAddr;
   }
 
-  event CheckIn(string ticketId, string placeID, Tourist Tourist);
+  event CheckIn(string ticketId, string placeID, Tourist tourist);
   function checkIn(string memory ticketId, string memory placeID) public {
     if (isRegister[msg.sender] == false) {
       revert NotRegister({
