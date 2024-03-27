@@ -31,13 +31,38 @@ interface IERC20With4RMechanism{
     
 }
 
+
 error NotRegister(address Address);
 error InvalidPlaceID(string PlaceID);
 error InvalidTicketID(string PlaceID, string TicketID);
-error TicketIsUsed(string PlaceID, string TicketID);
 error InvalidPostID(bytes32 PostID);
 error TicketIsVerified(string PlaceID, string TicketID);
 error TicketNotVerified(string PlaceID, string TicketID);
+library Math {
+    function sqrt(uint256 x) external pure returns (uint128) {
+    if (x == 0) return 0;
+    else{
+        uint256 xx = x;
+        uint256 r = 1;
+        if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }
+        if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }
+        if (xx >= 0x100000000) { xx >>= 32; r <<= 16; }
+        if (xx >= 0x10000) { xx >>= 16; r <<= 8; }
+        if (xx >= 0x100) { xx >>= 8; r <<= 4; }
+        if (xx >= 0x10) { xx >>= 4; r <<= 2; }
+        if (xx >= 0x8) { r <<= 1; }
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1;
+        uint256 r1 = x / r;
+        return uint128 (r < r1 ? r : r1);
+    }
+  }
+}
 
 contract Tourism {
 
@@ -86,12 +111,15 @@ contract Tourism {
   mapping (string  => string ) public destinationAddress; // placeID => destination address
   mapping (string  => Review[]) public destinationReviews; // destinationId => review[]
   mapping (string  => uint8[]) public destinationRates; // all rates of a destination
+  
 
   mapping (bytes32 => Review) public reviewByID;
   mapping (bytes32 => bool) public reviewVerify;
+  mapping (bytes32 => bool) public isReviewFromCheckIn;
+
   // Ticket Check
   mapping (string  => mapping (string => bool)) private isActive; //check for a ticket in place is active yet
-  mapping (string  => mapping (string => bool)) private isUsed; //check for a ticket in place is used yet
+  // mapping (string  => mapping (string => bool)) private isUsed; //check for a ticket in place is used yet
   mapping (string  => mapping (string => bool)) public isVerify; // check for a ticket in place is used for review post
   // Check for vote one time
   mapping (address => mapping (bytes32 => bool)) isVoted;
@@ -124,49 +152,46 @@ contract Tourism {
     destinationAddress[_id] = destinationAddr;
   }
 
-  event CheckIn(string ticketId, string placeID, Tourist tourist);
-  function checkIn(string memory ticketId, string memory placeID) public {
+  event CheckIn(bytes32 indexed postID, string indexed placeID, Tourist tourist);
+  function checkIn( string memory placeID) public {
     if (isRegister[msg.sender] == false) {
       revert NotRegister({
         Address: msg.sender
       });
     }
-    if (bytes(destinationIdentify[placeID]).length < 0) {
+    if (bytes(destinationIdentify[placeID]).length == 0) {
       revert InvalidPlaceID({
         PlaceID: placeID
       });
     }
-    if(isActive[placeID][ticketId] == false) {
-      revert InvalidTicketID({
-        PlaceID: placeID,
-        TicketID: ticketId
-      });
-    }
-    if(isUsed[placeID][ticketId] == true) {
-      revert TicketIsUsed({
-        PlaceID: placeID,
-        TicketID: ticketId
-      });
-    }
-    isUsed[placeID][ticketId] = true;
-    emit CheckIn(ticketId, placeID, touristIdentify[msg.sender]);
+    bytes32 postID = keccak256(abi.encodePacked(msg.sender, block.timestamp));
+    isReviewFromCheckIn[postID] = true;
+    emit CheckIn(postID, placeID, touristIdentify[msg.sender]);
   }
 
-  event PostReview(Tourist tourist,bytes32 postID, string PlaceName, string review, uint8 rate, string title);
-  function reviews( string memory placeID ,string memory review, uint8 rate, string memory title) public {
+  event PostReview(Tourist tourist,bytes32 indexed postID, string indexed PlaceName, string review, uint8 rate, string title);
+  function reviews( string memory placeID ,bytes32 postID, string memory review, uint8 rate, string memory title) public {
     if (isRegister[msg.sender] == false) {
       revert NotRegister({
         Address: msg.sender
       });
     }
-    if (bytes(destinationIdentify[placeID]).length < 0) {
+    if (bytes(destinationIdentify[placeID]).length == 0) {
       revert InvalidPlaceID({
         PlaceID: placeID
       });
+    }
+    if (postID == 0x0000000000000000000000000000000000000000000000000000000000000000) {
+      postID = keccak256(abi.encodePacked(msg.sender, placeID, review, rate, title, block.timestamp));
+    } else if (isReviewFromCheckIn[postID] == true) {
+      reviewVerify[postID] = true;
+      isReviewFromCheckIn[postID] = false;
+    } else {
+      revert();
     }
     require(rate >= 0 && rate <= 50, "Unvalid number rate");
     Review memory newReview;
-    newReview.postID = generateIdForReviewPost(placeID, block.timestamp, review, rate, title);
+    newReview.postID = postID;
     newReview.author = msg.sender;
     newReview.placeId = placeID;
     newReview.review = review;
@@ -181,7 +206,7 @@ contract Tourism {
     TouristReviews[msg.sender].push(newReview);
     destinationReviews[placeID].push(newReview);
     destinationRates[placeID].push(rate);
-    emit PostReview(touristIdentify[msg.sender], newReview.postID, destinationIdentify[placeID], review, rate, title);
+    emit PostReview(touristIdentify[msg.sender], newReview.postID, placeID, review, rate, title);
 
   }
 
@@ -205,18 +230,8 @@ contract Tourism {
     isAdmin[userAddress] = true;
   }
 
-  function generateIdForReviewPost(
-    string memory placeId,
-    uint256 arrivalDate,
-    string memory review,
-    uint rate,
-    string memory title
-    ) private view returns (bytes32) {
-    return keccak256(abi.encodePacked(block.timestamp, placeId, arrivalDate, review, rate, title, msg.sender));
-  }
-
   function upvote(bytes32 postID) public {
-    require(bytes32(reviewByID[postID].postID) != 0x0000000000000000000000000000000000000000000000000000000000000000, "Invalid Post ID");
+    require(bytes32(reviewByID[postID].postID) != 0x0000000000000000000000000000000000000000000000000000000000000000);
     if (isRegister[msg.sender] == false) {
       revert NotRegister({
         Address: msg.sender
@@ -228,6 +243,13 @@ contract Tourism {
 
     Review storage reviewPost = reviewByID[postID];
     reviewPost.upvoteNum++;
+    string memory destID = reviewPost.placeId;
+    Review[] storage destReviews = destinationReviews[destID];
+    for (uint i = 0; i < destReviews.length; i++) {
+      if (destReviews[i].postID == postID) {
+        destReviews[i].upvoteNum++;
+      }
+    }
     //Tao vote 
 
     Vote memory newVote;
@@ -247,9 +269,9 @@ contract Tourism {
     return reviewVotes[postID]; 
   }
   function calculateTotalReward(bytes32 postID) public view returns (uint) {
-    require(bytes32(reviewByID[postID].postID) != 0x0000000000000000000000000000000000000000000000000000000000000000, "Invalid Post ID");
+    require(bytes32(reviewByID[postID].postID) != 0x0000000000000000000000000000000000000000000000000000000000000000);
     // require(block.timestamp - reviewByID[postID].createTime > 7 days, "Wait for 7days");
-    require(reviewVerify[postID] == true, "Cannot reward because of unverifying ticket");
+    require(reviewVerify[postID] == true);
     // lấy mảng vote ra
     Vote[] memory upvotes = getVoteOfReview(postID);
     uint voteNum = reviewByID[postID].upvoteNum;
@@ -304,10 +326,8 @@ contract Tourism {
         listReward[temp].push(postID);
         touristRewardOnPostID[temp][postID] = curatorsReward / repIndex * curatorVP / 100;
     }
-
     Tourist storage author = touristIdentify[authorAddress];
-    author.REP += sqrt(totalRep);
-
+    author.REP += Math.sqrt(totalRep);
     emit DivideRewardBy4R(postID, authorReward, curatorsReward, upvotes);
   }
 
@@ -327,8 +347,8 @@ contract Tourism {
         PostID: postID
       });
     }
-    if(isUsed[review.placeId][ticketID] == false) {
-      revert TicketIsUsed({
+    if(isActive[review.placeId][ticketID] == false) {
+      revert InvalidTicketID({
         PlaceID: review.placeId,
         TicketID: ticketID
       });
@@ -346,28 +366,6 @@ contract Tourism {
     reviewVerify[postID] = true;
   }
 
-  function sqrt(uint256 x) pure internal returns (uint128) {
-    if (x == 0) return 0;
-    else{
-        uint256 xx = x;
-        uint256 r = 1;
-        if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }
-        if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }
-        if (xx >= 0x100000000) { xx >>= 32; r <<= 16; }
-        if (xx >= 0x10000) { xx >>= 16; r <<= 8; }
-        if (xx >= 0x100) { xx >>= 8; r <<= 4; }
-        if (xx >= 0x10) { xx >>= 4; r <<= 2; }
-        if (xx >= 0x8) { r <<= 1; }
-        r = (r + x / r) >> 1;
-        r = (r + x / r) >> 1;
-        r = (r + x / r) >> 1;
-        r = (r + x / r) >> 1;
-        r = (r + x / r) >> 1;
-        r = (r + x / r) >> 1;
-        r = (r + x / r) >> 1;
-        uint256 r1 = x / r;
-        return uint128 (r < r1 ? r : r1);
-    }
-  }
+  
 }
 

@@ -23,5 +23,29 @@ async function saveFrontendFiles(address, name) {
     JSON.stringify(TokenArtifact, null, 2)
   );
 }
+async function saveSCFiles(address, name) {
 
-module.exports = saveFrontendFiles;
+  const contractsDir = path.join(__dirname, "..", "deploys");
+
+  const contractsDirTokenAddress = path.join(contractsDir, `${name}-address.json`);
+  const contractsDirABI = path.join(contractsDir, `${name}-address.json`);
+  if (!fs.existsSync(contractsDir)) {
+    fs.mkdirSync(contractsDir);
+  }
+
+  fs.writeFileSync(
+    path.join(contractsDir, `${name}-address.json`),
+    JSON.stringify({ Token: address }, undefined, 2)
+  );
+
+  const TokenArtifact = artifacts.readArtifactSync(`${name}`);
+
+  fs.writeFileSync(
+    path.join(contractsDir, `${name}.json`),
+    JSON.stringify(TokenArtifact, null, 2)
+  );
+}
+module.exports = {
+  saveFrontendFiles,
+  saveSCFiles
+};
