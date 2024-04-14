@@ -15,7 +15,12 @@ module.exports = {
     vibi: {
       chainId: 306,
       url: "https://vibi.vbchain.vn/",
-      accounts: ["0xe11f5c9977c82fe752f84caeb9ba0c50feabd0ce90088cb26e61ee0fce5950c2", "0x40cf31902207cedc9a262552fb975403ecbd907d3407140d389922189594a553", "0x5a4b53f1f3acc7b381f5159399deab7f579f9cefafe8e31b36a4822feb3c3703"]
+      accounts: [
+       "0xe11f5c9977c82fe752f84caeb9ba0c50feabd0ce90088cb26e61ee0fce5950c2",
+       "0x40cf31902207cedc9a262552fb975403ecbd907d3407140d389922189594a553",
+       "0x5a4b53f1f3acc7b381f5159399deab7f579f9cefafe8e31b36a4822feb3c3703",
+       "0x71630cd12b7c5e53829f0b83cef4e45fd22ef80f9f8b4072ba3bca06604d6c55"
+      ]
     },
     agd: {
       chainId: 8888,

@@ -20,7 +20,7 @@ async function main() {
  
   const contractTourDCWith4RMechanism = await contractTourism.deploy(erc20_address)
   console.log("contract Tourism deploy at address: ", await contractTourDCWith4RMechanism.getAddress())
-  await saveFrontendFiles(await contractTourDCWith4RMechanism.getAddress(), "Tourism")
+  // await saveFrontendFiles(await contractTourDCWith4RMechanism.getAddress(), "Tourism")
   await saveSCFiles(await contractTourDCWith4RMechanism.getAddress(), "Tourism")
 }
 

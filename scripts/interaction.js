@@ -29,11 +29,16 @@ async function main() {
     console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0x9E0E58F9052aDc53986eA9ca7cf8389b0EdE364f"))
     
     //checkin
-    
+    // postID: 0x977bf9b413168b9ba6b89beb028b5885f8fec5082da4810709ecd320f3a2e6b0
     const checkIn =  await contractTourDCWith4RMechanism.connect(owner).checkIn("65f2c7e1f60b126cb2487527")
     console.log("checkIn hash::", checkIn.hash)
     let checkInReceipt = await checkIn.wait()
-    console.log("checkIn receipt:", checkInReceipt.logs[0].topics)
+    console.log("checkIn postID:", checkInReceipt.logs[0].topics[1])
+    let postID = checkInReceipt.logs[0].topics[1]
+    // const TouristReview = await contractTourDCWith4RMechanism.connect(owner).getAllReviewsOfTourist('0x76E046c0811edDA17E57dB5D2C088DB0F30DcC74')
+    // console.log("All review of tourist: ", TouristReview)
+
+    // console.log(await contractTourDCWith4RMechanism.connect(owner).getVoteOfReview('0xd1eb3ddc76b355a05534c1b9284c8139b838f659e7f66747afeea875732ac284'))
     // console.log("string PlaceID: ", utils.parseBytes32String('0x462fb69b67dcea0c861527bc0c3d4ef2d945a6ecde0c6e6250f02b7132161f9f'))
     
     // "0x3e984587159bd3f51b18ef9269138d60fa097c8af2a7544f6e08cfbd8b4efc2b"
@@ -47,10 +52,10 @@ async function main() {
     // nha trang: 65f2c7e1f60b126cb2487527
     // const postID1 = hre.ethers.solidityPackedKeccak256([ "address", "uint", "string" ], [await owner.getAddress(), Date.now(), "65f2c7e1f60b126cb2487527"])
     // console.log(postID1)
-    // const reviewPost1 = await contractTourDCWith4RMechanism.connect(owner).reviews("65f2c7e1f60b126cb2487527",postID1, "Good Place", 40, "Very excited Place");
+    // const reviewPost1 = await contractTourDCWith4RMechanism.connect(owner).reviews("65f2c7e1f60b126cb2487527",postID, "Good Place", 40, "Very excited Place");
     // console.log(reviewPost1)
     // const postID2 = hre.ethers.solidityPackedKeccak256([ "address", "uint", "string" ], [await owner.getAddress(), Date.now(), "65f2c7e1f60b126cb2487527"])
-    // await contractTourDCWith4RMechanism.connect(addr1).reviews("65f2c7e1f60b126cb2487527",postID2, "Excellent Place", 45, "Perfectly!!!");
+    await contractTourDCWith4RMechanism.connect(owner).reviews("65f2c7e1f60b126cb2487527",postID, "Excellent Place", 45, "Perfectly!!!");
     // await contractTourDCWith4RMechanism.connect(addr2).reviews("65f2c7e1f60b126cb2487527", "Dream Place", 50, "Ten Mark No But");
 
     // Da lat: 65f2c838f60b126cb248752d
@@ -67,7 +72,7 @@ async function main() {
 
     // Da Nang: 65f2c80ef60b126cb248752b
     // console.log(await contractTourDCWith4RMechanism.connect(owner).destinationIdentify("65f2c80ef60b126cb248752b"))
-    // const reviewPost1 = await contractTourDCWith4RMechanism.connect(owner).reviews("65f2c80ef60b126cb248752b", "Romantic Cityyy <3", 49, "Beautifullll");
+    // const reviewPost2 = await contractTourDCWith4RMechanism.connect(owner).reviews("65f2c80ef60b126cb248752b", "Romantic Cityyy <3", 49, "Beautifullll");
     // await contractTourDCWith4RMechanism.connect(addr1).reviews("65f2c80ef60b126cb248752b", "Dragon Bridge,  Wow!!!!", 50, "Omg! fire-breathing dragon ");
     // await contractTourDCWith4RMechanism.connect(addr2).reviews("65f2c80ef60b126cb248752b", "City of Bridge!", 46, "Niceeee nice nice!!!");
 

@@ -6,11 +6,11 @@ var ERC20_address = require('../deploys/ERC20With4RMechanism-address.json').Toke
 
 async function main() {
   try {
-    const [owner, addr1, addr2] = await ethers.getSigners();
+    const [owner, addr1, addr2, addr3] = await ethers.getSigners();
     console.log("owner: ", await owner.getAddress());
     console.log("addr1: ", await addr1.getAddress());
     console.log("addr2: ", await addr2.getAddress());
-
+    console.log("addr3: ", await addr3.getAddress());
     // Get the ContractFactory of your SimpleContract
     const ERC20 = await hre.ethers.getContractFactory("ERC20With4RMechanism");
 
@@ -33,24 +33,24 @@ async function main() {
     await tran_register_3.wait();
     
 
+    const tran_register_4 = await contractTourDCWith4RMechanism.connect(addr3).register("Phong", "Tran", "11111111111111");
+    await tran_register_4.wait();
+
     const add_des_1 = await contractTourDCWith4RMechanism.connect(owner).addDestination("65f2c7e1f60b126cb2487527", "LightHouse", "Nha Trang, VietNam")
     const add_des_2 = await contractTourDCWith4RMechanism.connect(owner).addDestination("65f2c838f60b126cb248752d", "Da Lat", "Lam Dong, VietNam")
     const add_des_3 = await contractTourDCWith4RMechanism.connect(owner).addDestination("65f2c7fcf60b126cb2487529", "Secret Cave", "Qui Nhon, VietNam")
     const add_des_4 = await contractTourDCWith4RMechanism.connect(owner).addDestination("65f2c80ef60b126cb248752b", "Da Nang", "Da Nang, VietNam")
     
-
-
-
-    await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65f2c80ef60b126cb248752b", "1")
-    await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65f2c80ef60b126cb248752b", "2")
-    await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65f2c80ef60b126cb248752b", "3")
-    await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65f2c80ef60b126cb248752b", "4")
+    // await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65f2c80ef60b126cb248752b", "1")
+    // await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65f2c80ef60b126cb248752b", "2")
+    // await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65f2c80ef60b126cb248752b", "3")
+    // await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65f2c80ef60b126cb248752b", "4")
 
     // Set a new message in the contract
     console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0x76E046c0811edDA17E57dB5D2C088DB0F30DcC74"))
     console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0x1a620c351c07763f430897AeaA2883E37cA0aaCD"))
     console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0x9E0E58F9052aDc53986eA9ca7cf8389b0EdE364f"))
-    
+    console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0xA08a09709bfeAEa2f3e675f961017c933F73C663"))
     // //checkin
     
     // // const checkIn =  await contractTourDCWith4RMechanism.connect(owner).checkIn("65f2c7e1f60b126cb2487527")
