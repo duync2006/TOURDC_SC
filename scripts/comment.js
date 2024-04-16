@@ -23,21 +23,14 @@ async function main() {
     const contractTourDCWith4RMechanism = await tourismContract.attach(tourism_address)
 
 
-    
-    //checkin
-    // postID: 0x977bf9b413168b9ba6b89beb028b5885f8fec5082da4810709ecd320f3a2e6b0
-    const checkIn =  await contractTourDCWith4RMechanism.connect(owner).checkIn("65f2c7e1f60b126cb2487527")
-    console.log("checkIn hash::", checkIn.hash)
-    let checkInReceipt = await checkIn.wait()
-    console.log("checkIn postID:", checkInReceipt.logs[0].topics[1])
-    let postID = checkInReceipt.logs[0].topics[1]
+    // Set a new message in the contract
+    let postID = '0x93ff9780601a717502fe88a3f2de9dfc95c179af1d02e48d382a19d60afdfde8'
+    console.log('comment on postID: ', postID)
+    let transaction1  = await contractTourDCWith4RMechanism.connect(addr1).comment(postID, "i agree with u"); 
+    let transaction2  = await contractTourDCWith4RMechanism.connect(addr2).comment(postID, "i dont agree with u"); 
+    await transaction2.wait()
 
-    // Post Review
-    // nha trang: 65f2c7e1f60b126cb2487527
-    const reviewPost1 = await contractTourDCWith4RMechanism.connect(owner).reviews("65f2c7e1f60b126cb2487527",postID, "Nice", 30, "Very nice Place");
-    await reviewPost1.wait()
-    const TouristReview = await contractTourDCWith4RMechanism.connect(owner).getAllReviewsOfTourist('0x9E0E58F9052aDc53986eA9ca7cf8389b0EdE364f')
-    console.log("All review of tourist: ", TouristReview)
+    console.log("get comments of postID: ", await contractTourDCWith4RMechanism.getAllCommentOfReviewPost(postID))
 
     // Retrieve the updated message
   } catch (error) {

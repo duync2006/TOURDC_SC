@@ -47,10 +47,10 @@ async function main() {
     // await contractTourDCWith4RMechanism.connect(owner).addPlaceTicket("65f2c80ef60b126cb248752b", "4")
 
     // Set a new message in the contract
-    console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0x76E046c0811edDA17E57dB5D2C088DB0F30DcC74"))
-    console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0x1a620c351c07763f430897AeaA2883E37cA0aaCD"))
-    console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0x9E0E58F9052aDc53986eA9ca7cf8389b0EdE364f"))
-    console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0xA08a09709bfeAEa2f3e675f961017c933F73C663"))
+    // console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0x76E046c0811edDA17E57dB5D2C088DB0F30DcC74"))
+    // console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0x1a620c351c07763f430897AeaA2883E37cA0aaCD"))
+    // console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0x9E0E58F9052aDc53986eA9ca7cf8389b0EdE364f"))
+    // console.log(await contractTourDCWith4RMechanism.connect(owner).touristIdentify("0xA08a09709bfeAEa2f3e675f961017c933F73C663"))
     // //checkin
     
     // // const checkIn =  await contractTourDCWith4RMechanism.connect(owner).checkIn("65f2c7e1f60b126cb2487527")

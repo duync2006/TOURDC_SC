@@ -32,9 +32,6 @@ async function main() {
     await contractTourDCWith4RMechanism.connect(addr1).upvote(postID); 
     let transaction1 = await contractTourDCWith4RMechanism.connect(addr2).upvote(postID); 
     await transaction1.wait()
-
-    
-
     // Retrieve the updated message
   } catch (error) {
     console.error(error);

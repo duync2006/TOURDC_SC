@@ -15,7 +15,6 @@ async function main() {
 
     // Connect to the deployed contract
     const contract = await ERC20.attach(ERC20_address);
-    console.log(await contract.balanceOf("0x76E046c0811edDA17E57dB5D2C088DB0F30DcC74"));
     
     const tourismContract = await hre.ethers.getContractFactory("Tourism",  {libraries: {
       Math:  "0x097718b598DeE6C3a13F24BA0C79f5d924261B6F",
@@ -23,23 +22,18 @@ async function main() {
     const contractTourDCWith4RMechanism = await tourismContract.attach(tourism_address)
 
 
-    
-    //checkin
-    // postID: 0x977bf9b413168b9ba6b89beb028b5885f8fec5082da4810709ecd320f3a2e6b0
-    const checkIn =  await contractTourDCWith4RMechanism.connect(owner).checkIn("65f2c7e1f60b126cb2487527")
-    console.log("checkIn hash::", checkIn.hash)
-    let checkInReceipt = await checkIn.wait()
-    console.log("checkIn postID:", checkInReceipt.logs[0].topics[1])
-    let postID = checkInReceipt.logs[0].topics[1]
+    // Set a new message in the contract
+    // let transaction = await contractTourDCWith4RMechanism.connect(owner).divideRewardBy4R('0x73507947b34f472b0ff4b9c9649084da6e3190bb0387612ae9876dcb4d116a37');
+    // await transaction.wait()
+    console.log('Reward List of Owner: ', await contractTourDCWith4RMechanism.connect(owner).seeRewardLists())
+    console.log('Reward List of addr1: ', await contractTourDCWith4RMechanism.connect(addr1).seeRewardLists())
+    console.log('Reward List of addr2: ', await contractTourDCWith4RMechanism.connect(addr2).seeRewardLists())
 
-    // Post Review
-    // nha trang: 65f2c7e1f60b126cb2487527
-    const reviewPost1 = await contractTourDCWith4RMechanism.connect(owner).reviews("65f2c7e1f60b126cb2487527",postID, "Nice", 30, "Very nice Place");
-    await reviewPost1.wait()
-    const TouristReview = await contractTourDCWith4RMechanism.connect(owner).getAllReviewsOfTourist('0x9E0E58F9052aDc53986eA9ca7cf8389b0EdE364f')
-    console.log("All review of tourist: ", TouristReview)
+    console.log(await contract.balanceOf("0x76E046c0811edDA17E57dB5D2C088DB0F30DcC74"));
+    console.log(await contract.balanceOf("0x1a620c351c07763f430897AeaA2883E37cA0aaCD"));
+    console.log(await contract.balanceOf("0x9E0E58F9052aDc53986eA9ca7cf8389b0EdE364f"));
 
-    // Retrieve the updated message
+
   } catch (error) {
     console.error(error);
     process.exit(1);
